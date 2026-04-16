@@ -2,14 +2,15 @@
 
 return [
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
+    // Keep this broad for Render + decoupled frontend token auth.
+    'paths' => ['*'],
     'allowed_methods' => ['*'],
     'allowed_origins' => ['*'],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
-    'max_age' => 0,
-    'supports_credentials' => (bool) env('CORS_SUPPORTS_CREDENTIALS', false),
+    'max_age' => 600,
+    'supports_credentials' => false,
 ];
 
 ?>
