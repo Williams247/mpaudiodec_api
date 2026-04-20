@@ -38,11 +38,6 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute((int) env('RATE_LIMIT_AUTH_PER_MINUTE', 20))
                 ->by(strtolower((string) $request->input('email')) . '|' . $request->ip());
         });
-
-        RateLimiter::for('download-sign', function (Request $request) {
-            return Limit::perMinute((int) env('RATE_LIMIT_SIGN_DOWNLOAD_PER_MINUTE', 60))
-                ->by($request->user()?->id ?: $request->ip());
-        });
     }
 }
 

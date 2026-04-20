@@ -2,17 +2,12 @@
 set -e
 cd /var/www/html
 
-# Baked .env in the image has empty MONGODB_URI. Laravel loads the file first; on some hosts
-# that masks Render's real env vars. Remove the file so only process environment applies.
-rm -f .env
-
-# Fail fast with a clear Render log line if secrets are missing
 if [ -z "$APP_KEY" ]; then
-  echo "audiodec: ERROR — set APP_KEY in Render Environment (run: php artisan key:generate --show locally)" >&2
+  echo "audiodec: ERROR — APP_KEY is not set (run: php artisan key:generate --show)" >&2
   exit 1
 fi
 if [ -z "$MONGODB_URI" ]; then
-  echo "audiodec: ERROR — set MONGODB_URI in Render Environment (Atlas connection string)" >&2
+  echo "audiodec: ERROR — MONGODB_URI is not set" >&2
   exit 1
 fi
 

@@ -31,6 +31,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 WORKDIR /var/www/html
 
+# Do not run config:cache / route:cache here: secrets come from the runtime environment.
 RUN if [ -f .env.example ]; then cp .env.example .env; else \
     printf '%s\n' \
       'APP_NAME=Laravel' \
@@ -46,12 +47,10 @@ RUN if [ -f .env.example ]; then cp .env.example .env; else \
       'MONGODB_URI=' \
       'MONGODB_DATABASE=audiodec' \
       > .env; \
-    fi
-
-# Do NOT run config:cache / route:cache here: the image .env has empty secrets. Render injects
-# env at runtime; cached config would ignore MONGODB_URI, APP_KEY, etc. and cause 500s in prod.
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
+    fi \
+    && composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
     && php artisan key:generate --force \
+    && rm -f .env \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 10000

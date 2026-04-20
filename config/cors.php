@@ -2,7 +2,7 @@
 
 return [
 
-    // Keep this broad for Render + decoupled frontend token auth.
+    // Broad defaults for a token-auth API; tighten in config if you expose cookies cross-site.
     'paths' => ['*'],
     'allowed_methods' => ['*'],
     'allowed_origins' => ['*'],
