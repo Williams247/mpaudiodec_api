@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Wraps successful JSON responses for GET /fetch-music in { "encryptedPayload": "<base64>" }.
+ * Wraps successful JSON responses for GET /fetch-music in { "audio": "<base64>" }.
  * If API_PAYLOAD_ENCRYPTION_KEY is unset, returns the original JSON (for local dev).
  */
 class EncryptFetchMusicResponse
@@ -43,7 +43,7 @@ class EncryptFetchMusicResponse
         }
 
         return response()->json([
-            'encryptedPayload' => $encrypted,
+            'audio' => $encrypted,
         ], 200, [
             'Content-Type' => 'application/json',
             'X-Payload-Encrypted' => '1',

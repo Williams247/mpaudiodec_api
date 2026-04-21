@@ -6,12 +6,15 @@ use App\Models\Music;
 use App\Models\Category;
 use App\Services\Json\JsonResponse;
 use App\Services\App\SendMailService;
+use App\Services\Cloudinary\CloudinarySignedDeliveryService;
 use App\Models\Otp;
 
 class MusicService
 {
-    public function __construct(private SendMailService $sendMailService)
-    {
+    public function __construct(
+        private SendMailService $sendMailService,
+        private CloudinarySignedDeliveryService $cloudinarySignedDelivery,
+    ) {
     }
 
     public function get_music(?string $category = null)
@@ -19,18 +22,76 @@ class MusicService
         # If there's no search query, fetch every data from the category collection
         if ($category === null || $category === '') {
             $music = Music::all();
-            return JsonResponse::success("Music fetched", $music);
+            return $this->musicFetchedResponse($music);
         }
 
         # Fetch all
         if ($category === 'all') {
             $music = Music::all();
-            return JsonResponse::success("Music fetched", $music);
+            return $this->musicFetchedResponse($music);
         }
 
         # If category is fetch, fetch by the category's name
         $music = Music::where("category", $category)->get();
-        return JsonResponse::success("Music fetched", $music);
+        return $this->musicFetchedResponse($music);
+    }
+
+    /**
+     * Refresh Cloudinary authenticated delivery URLs on each list fetch and expose
+     * expiry metadata so the client can refetch before URLs go stale.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Music>|\Illuminate\Support\Collection<int, Music>  $music
+     */
+    private function musicFetchedResponse($music)
+    {
+        $payload = [
+            'status' => 200,
+            'success' => true,
+            'message' => 'Music fetched',
+            'data' => $this->mapMusicWithFreshCloudinaryUrls($music),
+        ];
+
+        if ($this->cloudinarySignedDelivery->isConfigured()) {
+            $ttl = $this->cloudinarySignedDelivery->ttlSeconds();
+            $payload['media_urls_expires_at'] = now()->addSeconds($ttl)->toIso8601String();
+            $payload['media_urls_ttl_seconds'] = $ttl;
+        }
+
+        return response()->json($payload, 200);
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Music>|\Illuminate\Support\Collection<int, Music>  $music
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapMusicWithFreshCloudinaryUrls($music): array
+    {
+        return $music->map(function (Music $m) {
+            $row = $m->toArray();
+
+            $filename = isset($row['filename']) && is_string($row['filename']) ? trim($row['filename']) : '';
+            if ($filename !== '' && $this->cloudinarySignedDelivery->isConfigured()) {
+                $signed = $this->cloudinarySignedDelivery->signAuthenticatedVideo($filename);
+                if ($signed !== null) {
+                    $row['music_url'] = $signed;
+                }
+            }
+
+            $thumb = isset($row['thumbnail_url']) && is_string($row['thumbnail_url']) ? trim($row['thumbnail_url']) : '';
+            if ($thumb !== '' && $this->cloudinarySignedDelivery->isConfigured()) {
+                $parsed = $this->cloudinarySignedDelivery->parseAuthenticatedDeliveryUrl($thumb);
+                if ($parsed !== null) {
+                    $signedThumb = $parsed['resource_type'] === 'video'
+                        ? $this->cloudinarySignedDelivery->signAuthenticatedVideo($parsed['public_id'])
+                        : $this->cloudinarySignedDelivery->signAuthenticatedImage($parsed['public_id']);
+                    if ($signedThumb !== null) {
+                        $row['thumbnail_url'] = $signedThumb;
+                    }
+                }
+            }
+
+            return $row;
+        })->values()->all();
     }
 
     # Ask for permission before adding music
