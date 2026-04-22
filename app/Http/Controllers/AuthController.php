@@ -94,6 +94,24 @@ class AuthController extends Controller
             return JsonResponse::internal_server_error('Something went wrong', $e->getMessage());
         }
     }
+
+    public function current_user(Request $request)
+    {
+        try {
+            $user = $request->user();
+            if ($user === null) {
+                return JsonResponse::unauthorized('Unauthenticated', null);
+            }
+
+            return JsonResponse::success('User fetched', [
+                'name' => $user->name,
+                'email' => $user->email,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error($e->getMessage(), ['exception' => $e]);
+            return JsonResponse::internal_server_error('Something went wrong', $e->getMessage());
+        }
+    }
 }
 
 ?>

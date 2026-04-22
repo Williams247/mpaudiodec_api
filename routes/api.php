@@ -26,6 +26,8 @@ Route::middleware('throttle:api')->group(function () {
         ->middleware([DecryptSaveMusicPayload::class]);
 
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/user', [AuthController::class, 'current_user']);
+
         # Music routes
         Route::get('/fetch-music-categories', [MusicCategoryController::class, 'get_music_categories']);
         Route::get('/fetch-music', [MusicController::class, 'get_music'])
