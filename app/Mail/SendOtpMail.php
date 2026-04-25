@@ -41,7 +41,7 @@ class SendOtpMail extends Mailable
 
                     <tr>
                         <td align="center" style="color:#ffffff; font-size:24px; font-weight:bold; padding-bottom:20px;">
-                          Audiodec
+                          MPAudiodec
                         </td>
                     </tr>
 
